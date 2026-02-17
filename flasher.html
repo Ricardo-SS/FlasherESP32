@@ -1,0 +1,1247 @@
+﻿<!doctype html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Web Flasher ESP32/ESP8266</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --bg2: #eef2ff;
+      --card: #ffffff;
+      --stroke: rgba(17, 24, 39, .10);
+      --stroke2: rgba(17, 24, 39, .14);
+
+      --text: #0f172a;
+      --muted: #64748b;
+
+      --shadow: 0 18px 45px rgba(15, 23, 42, .10);
+      --shadow2: 0 10px 25px rgba(15, 23, 42, .08);
+
+      --radius: 16px;
+
+      --indigo: #4f46e5;
+      --indigo2: #6366f1;
+      --green: #16a34a;
+      --red: #ef4444;
+
+      --focus: rgba(79, 70, 229, .18);
+
+      --win: #2563eb;
+      --mac: #6d28d9;
+      --lin: #f97316;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      padding: 28px 20px 40px;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(900px 520px at 10% 0%, rgba(79, 70, 229, .18), transparent 60%),
+        radial-gradient(900px 520px at 90% 10%, rgba(34, 197, 94, .10), transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+    }
+
+    .top { max-width: 1100px; margin: 0 auto 18px auto; }
+    h1 { margin: 0 0 8px 0; font-size: 28px; font-weight: 800; letter-spacing: -.2px; }
+    .sub { margin: 0; color: var(--muted); line-height: 1.5; max-width: 820px; }
+
+    .grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .card:hover { border-color: var(--stroke2); box-shadow: 0 22px 55px rgba(15, 23, 42, .12); }
+
+    .card-head { margin-bottom: 14px; }
+    .card-head h2 { margin: 10px 0 6px 0; font-size: 18px; font-weight: 800; letter-spacing: -.1px; }
+    .muted { color: var(--muted) !important; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      background: rgba(79, 70, 229, .10);
+      color: var(--indigo);
+      border: 1px solid rgba(79, 70, 229, .18);
+    }
+    .badge-pink { background: rgba(236, 72, 153, .10); color: #db2777; border-color: rgba(236, 72, 153, .18); }
+
+    code {
+      background: #f1f5f9;
+      border: 1px solid rgba(15, 23, 42, .10);
+      padding: 2px 8px;
+      border-radius: 999px;
+      color: #0f172a;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 10px 0 12px 0;
+    }
+
+    .btn, button {
+      border: 1px solid rgba(15, 23, 42, .12);
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow2);
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+      user-select: none;
+    }
+    .btn:hover, button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 35px rgba(15, 23, 42, .12);
+      border-color: rgba(15, 23, 42, .16);
+    }
+    .btn:active, button:active { transform: translateY(0) scale(.99); }
+    .btn:disabled, button:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    #btnConnect, .btn-indigo {
+      background: linear-gradient(135deg, var(--indigo), var(--indigo2));
+      border-color: rgba(79, 70, 229, .35);
+      color: #fff;
+    }
+    #btnFlash, .btn-green {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      border-color: rgba(34, 197, 94, .35);
+      color: #fff;
+    }
+    #btnDisconnect.is-danger {
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      border-color: rgba(239, 68, 68, .35);
+      color: #fff;
+    }
+
+    .file {
+      flex: 1 1 340px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(79, 70, 229, .35);
+      background: rgba(79, 70, 229, .06);
+      position: relative;
+      z-index: 1;
+    }
+    .file input[type="file"] {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #btnPickZip {
+      background: #ffffff;
+      border-color: rgba(79, 70, 229, .25);
+      position: relative;
+      z-index: 2;
+      pointer-events: auto;
+    }
+    .file-meta { min-width: 0; }
+    .file-name {
+      font-weight: 800;
+      font-size: 13px;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 360px;
+    }
+    .file-hint { font-size: 12px; }
+
+    .card--main { display: flex; flex-direction: column; gap: 12px; }
+    .status-wrap { display: grid; gap: 12px; }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 10px 0;
+      font-weight: 700;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(100, 116, 139, .50);
+      box-shadow: 0 0 0 4px rgba(100, 116, 139, .15);
+      flex: 0 0 auto;
+    }
+    .status-dot.is-idle { background: rgba(100, 116, 139, .50); box-shadow: 0 0 0 4px rgba(100, 116, 139, .15); }
+    .status-dot.is-working { background: rgba(79, 70, 229, .85); box-shadow: 0 0 0 4px rgba(79, 70, 229, .18); }
+    .status-dot.is-ok { background: rgba(22, 163, 74, .90); box-shadow: 0 0 0 4px rgba(22, 163, 74, .18); }
+    .status-dot.is-err { background: rgba(239, 68, 68, .95); box-shadow: 0 0 0 4px rgba(239, 68, 68, .18); }
+    .status-text.is-ok { color: var(--green) !important; }
+
+    .bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(15, 23, 42, .10);
+      background: #eef2ff;
+    }
+    #bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--indigo), #22c55e);
+      transition: width .15s linear;
+    }
+
+    .io-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(15, 23, 42, .10);
+      padding-bottom: 8px;
+    }
+    .io-tab {
+      border: 1px solid rgba(15, 23, 42, .12);
+      background: #f8fafc;
+      color: #334155;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .io-tab.is-active {
+      background: #ffffff;
+      color: var(--indigo);
+      border-color: rgba(79, 70, 229, .30);
+      box-shadow: var(--shadow2);
+    }
+    .io-pane { display: none; }
+    .io-pane.is-active { display: block; }
+
+    .log, pre#log {
+      height: 400px;
+      max-height: 420px;
+      overflow: auto;
+      white-space: pre;
+      word-break: normal;
+      margin: 0;
+      background: #0b1220;
+      color: rgba(255, 255, 255, .88);
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: var(--shadow2);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    @media (max-width: 700px) { .log, pre#log { height: 240px; max-height: 240px; } }
+
+    /* Toggle apagar */
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(15, 23, 42, .12);
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: var(--shadow2);
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .toggle input { width: 18px; height: 18px; accent-color: var(--indigo); }
+
+    .steps { margin: 10px 0 0 18px; color: #334155; }
+    .steps li { margin: 8px 0; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    #btnHelpWin { background: rgba(37,99,235,.12); border-color: rgba(37,99,235,.25); color: #1e3a8a; }
+    #btnHelpMac { background: rgba(109,40,217,.12); border-color: rgba(109,40,217,.25); color: #4c1d95; }
+    #btnHelpLin { background: rgba(249,115,22,.14); border-color: rgba(249,115,22,.28); color: #9a3412; }
+    #btnHelpWin:hover { background: rgba(37,99,235,.18); }
+    #btnHelpMac:hover { background: rgba(109,40,217,.18); }
+    #btnHelpLin:hover { background: rgba(249,115,22,.20); }
+
+    #driverLinks a { color: var(--indigo); text-decoration: none; border-bottom: 1px solid rgba(79, 70, 229, .35); }
+    #driverLinks a:hover { border-bottom-color: rgba(79, 70, 229, .75); }
+
+    /* ===== Terminal ===== */
+.term{
+  margin-top: 10px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 14px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.term-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.term-controls{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.term-baud{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+#termBaud{
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-weight: 800;
+  background: #fff;
+}
+
+.term-out{
+  height: 220px;
+  overflow: auto;
+  border-radius: 12px;
+  padding: 10px;
+  background: #0b1220;
+  color: rgba(255,255,255,.90);
+  border: 1px solid rgba(255,255,255,.08);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.term-send{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  margin-top: 10px;
+}
+
+#termIn{
+  flex: 1 1 auto;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 700;
+  outline: none;
+  box-shadow: var(--shadow2);
+}
+
+#termIn:focus{
+  border-color: rgba(79, 70, 229, .35);
+  box-shadow: 0 0 0 3px var(--focus);
+}
+
+  </style>
+</head>
+
+<body>
+  <header class="top">
+    <div>
+      <h1>Web Flasher ESP32/ESP8266</h1>
+      <p class="sub">Conecte o ESP via USB, clique em <b>Conectar</b> e selecione <b>1 ZIP</b> com o firmware.</p>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card card--main">
+      <div class="card-head">
+        <span class="badge">Firmware</span>
+        <h2>Gravação via USB (WebSerial)</h2>
+        <p class="muted">
+          Formato do ZIP:
+          <br />• <code>esp32/bootloader.bin</code>, <code>esp32/partitions.bin</code>, <code>esp32/firmware.bin</code>
+          <br />• <code>esp8266/firmware.bin</code>
+          <br />• (Opcional) <code>esp32/*.merged.bin</code>
+        </p>
+      </div>
+
+      <div class="actions">
+        <button id="btnConnect" class="btn btn-indigo">Conectar</button>
+        <button id="btnDisconnect" class="btn" disabled>Desconectar</button>
+
+        <div class="file">
+          <input id="zipFile" type="file" accept=".zip" disabled />
+          <button id="btnPickZip" class="btn" disabled type="button">Escolher ZIP</button>
+          <div class="file-meta">
+            <div class="file-name" id="zipName">Nenhum arquivo selecionado</div>
+            <div class="file-hint muted">Clique em "Escolher ZIP" para selecionar o arquivo</div>
+          </div>
+        </div>
+
+        <label class="toggle" title="Se marcado, apaga toda a flash antes de gravar">
+          <input id="chkErase" type="checkbox" />
+          Apagar antes
+        </label>
+
+        <button id="btnFlash" class="btn btn-green" disabled>Gravar</button>
+      </div>
+
+      <div class="status-wrap">
+        <div class="status-row">
+          <span class="status-dot is-idle" id="statusDot"></span>
+          <p id="status" class="muted status-text">Aguardando conexão...</p>
+        </div>
+
+        <div class="bar"><div id="bar"></div></div>
+        <div class="io-tabs">
+          <button id="tabLog" class="io-tab is-active" type="button">Log de gravação</button>
+          <button id="tabTerm" class="io-tab" type="button">Terminal serial</button>
+        </div>
+
+        <div id="panelLog" class="io-pane is-active">
+          <pre id="log" class="log"></pre>
+        </div>
+
+        <!-- Terminal / Serial Monitor -->
+        <div id="panelTerm" class="io-pane">
+          <div class="term">
+            <div class="term-head">
+              <div class="term-title">
+                <b>Terminal Serial</b>
+                <span class="muted"> (envia comandos após conectar)</span>
+              </div>
+
+              <div class="term-controls">
+                <label class="term-baud">
+                  Baud:
+                  <select id="termBaud">
+                    <option value="115200" selected>115200</option>
+                    <option value="9600">9600</option>
+                    <option value="57600">57600</option>
+                    <option value="74880">74880</option>
+                    <option value="921600">921600</option>
+                  </select>
+                </label>
+
+                <button id="btnTermClear" class="btn" type="button" disabled>Limpar</button>
+              </div>
+            </div>
+
+            <div id="termOut" class="term-out" aria-label="Saída do terminal"></div>
+
+            <div class="term-send">
+              <input id="termIn" type="text" placeholder="Digite e pressione Enter (ou clique em Enviar)..." disabled />
+              <button id="btnTermSend" class="btn btn-indigo" type="button" disabled>Enviar</button>
+            </div>
+
+            <div class="muted" style="margin-top:8px">
+              Dica: feche a Arduino IDE antes (ela pode prender a porta serial).
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <aside class="card" style="padding:16px">
+      <div class="card-head">
+        <span class="badge badge-pink">Ajuda</span>
+        <h2>Não apareceu nenhuma porta?</h2>
+        <p class="muted">Quase sempre é cabo sem dados ou driver faltando.</p>
+      </div>
+
+      <ol class="steps">
+        <li><b>Troque o cabo USB</b> (precisa ser cabo de dados).</li>
+        <li><b>Troque a porta USB</b> (evite hub/adaptador).</li>
+        <li><b>Feche a Arduino IDE</b> e outros programas que usam a porta.</li>
+        <li>Se ainda não aparecer, instale o driver abaixo.</li>
+      </ol>
+
+      <div class="row">
+        <button id="btnHelpWin" class="btn" type="button">Windows</button>
+        <button id="btnHelpMac" class="btn" type="button">macOS</button>
+        <button id="btnHelpLin" class="btn" type="button">Linux</button>
+      </div>
+
+      <p class="muted" id="driverHint" style="margin-top:12px">
+        Dica: depois de instalar, desconecte e conecte o ESP novamente.
+      </p>
+
+      <div id="driverLinks" class="muted" style="margin-top:10px; line-height:1.6"></div>
+    </aside>
+  </main>
+
+  <!-- SCRIPT 1/2 - UX do seletor de ZIP (botão "Escolher ZIP" + nome do arquivo) -->
+<script>
+  (function () {
+    const zipInput = document.getElementById("zipFile");
+    const btnPickZip = document.getElementById("btnPickZip");
+    const zipName = document.getElementById("zipName");
+
+    if (!zipInput || !btnPickZip || !zipName) return;
+
+    btnPickZip.addEventListener("click", () => {
+      if (btnPickZip.disabled) return;
+      zipInput.click();
+    });
+
+    zipInput.addEventListener("change", () => {
+      const f = zipInput.files?.[0];
+      zipName.textContent = f ? f.name : "Nenhum arquivo selecionado";
+    });
+  })();
+</script>
+
+<!-- SCRIPT 2/2 - WebSerial + Flash + Toggle apagar + Terminal (Serial Monitor) + Ajuda drivers -->
+<!-- CDN fallback JSZip (descomente para voltar): -->
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-xXDvecy9f5xk+Qx8Y3l6d8R7M4j8Q6xP4xI3qzDveoxW48UUfZo0Sy0RKZ77N8D66zCFAaj6MqFmoVoeAQMtkA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
+<script src="./jszip.min.js"></script>
+
+<script type="module">
+  // CDN fallback (descomente para voltar):
+  // import { ESPLoader, Transport } from "https://esm.sh/esptool-js@0.4.7?bundle";
+  import { ESPLoader, Transport } from "./libs/esptool-js/bundle.js"; // comente essa linha e descomente a cdn para usar online
+
+  // ====== UI refs ======
+  const btnConnect = document.getElementById("btnConnect");
+  const btnDisconnect = document.getElementById("btnDisconnect");
+  const zipFile = document.getElementById("zipFile");
+  const btnPickZip = document.getElementById("btnPickZip");
+  const btnFlash = document.getElementById("btnFlash");
+  const chkErase = document.getElementById("chkErase");
+
+  const bar = document.getElementById("bar");
+  const statusEl = document.getElementById("status");
+  const statusDot = document.getElementById("statusDot");
+  const logEl = document.getElementById("log");
+
+  // Terminal refs
+  const termOut = document.getElementById("termOut");
+  const termIn = document.getElementById("termIn");
+  const btnTermSend = document.getElementById("btnTermSend");
+  const btnTermClear = document.getElementById("btnTermClear");
+  const termBaud = document.getElementById("termBaud");
+  const tabLog = document.getElementById("tabLog");
+  const tabTerm = document.getElementById("tabTerm");
+  const panelLog = document.getElementById("panelLog");
+  const panelTerm = document.getElementById("panelTerm");
+
+  // Ajuda drivers refs
+  const btnHelpWin = document.getElementById("btnHelpWin");
+  const btnHelpMac = document.getElementById("btnHelpMac");
+  const btnHelpLin = document.getElementById("btnHelpLin");
+  const driverLinks = document.getElementById("driverLinks");
+  const driverHint = document.getElementById("driverHint");
+
+  // ====== helpers UI ======
+  const log = (m) => {
+    if (!logEl) return;
+    logEl.textContent += m + "\n";
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+
+  const setProgress = (pct) => {
+    if (!bar) return;
+    const v = Math.max(0, Math.min(100, Number(pct) || 0));
+    bar.style.width = v + "%";
+  };
+
+  const setStatusUi = (text, mode = "idle") => {
+    if (statusEl) statusEl.textContent = text;
+
+    if (!statusDot) return;
+    statusDot.classList.remove("is-idle", "is-working", "is-ok", "is-err");
+    if (statusEl) statusEl.classList.remove("is-ok");
+
+    if (mode === "working") statusDot.classList.add("is-working");
+    else if (mode === "ok") {
+      statusDot.classList.add("is-ok");
+      if (statusEl) statusEl.classList.add("is-ok");
+    } else if (mode === "err") statusDot.classList.add("is-err");
+    else statusDot.classList.add("is-idle");
+  };
+
+  function fmtMac(mac) {
+    if (!mac) return null;
+    if (Array.isArray(mac) || mac instanceof Uint8Array) {
+      return Array.from(mac).map((b) => Number(b).toString(16).padStart(2, "0")).join(":").toUpperCase();
+    }
+    return String(mac);
+  }
+
+  async function logChipDetails(loader, serialPort) {
+    try {
+      const info = serialPort?.getInfo?.();
+      const vid = info?.usbVendorId;
+      const pid = info?.usbProductId;
+      if (vid != null || pid != null) {
+        const v = vid != null ? `0x${Number(vid).toString(16).padStart(4, "0")}` : "n/a";
+        const p = pid != null ? `0x${Number(pid).toString(16).padStart(4, "0")}` : "n/a";
+        log(`USB VID:PID: ${v}:${p}`);
+      }
+    } catch {}
+
+    log(`Baud flasher: ${BAUD}`);
+
+    try {
+      if (loader?.chip?.getChipDescription) {
+        const desc = await loader.chip.getChipDescription(loader);
+        if (desc) log("Descrição: " + String(desc));
+      }
+    } catch {}
+
+    try {
+      if (loader?.chip?.getChipFeatures) {
+        const features = await loader.chip.getChipFeatures(loader);
+        if (features) log("Recursos: " + String(features));
+      }
+    } catch {}
+
+    try {
+      if (loader?.chip?.getCrystalFreq) {
+        const xtal = await loader.chip.getCrystalFreq(loader);
+        if (xtal != null) log("Cristal: " + String(xtal) + " MHz");
+      }
+    } catch {}
+
+    try {
+      if (loader?.chip?.readMac) {
+        const mac = await loader.chip.readMac(loader);
+        const macFmt = fmtMac(mac);
+        if (macFmt) log("MAC: " + macFmt);
+      }
+    } catch {}
+
+    try {
+      if (typeof loader?.getFlashSize === "function") {
+        const flashMb = await loader.getFlashSize();
+        if (flashMb != null) log("Flash detectada: " + String(flashMb) + " KB");
+      }
+    } catch {}
+  }
+
+  // ====== state ======
+  let port = null;
+  let transport = null;
+  let esploader = null;
+  let chipName = null;
+
+  // Flash baud (CH340 costuma ser mais estável em 115200)
+  const BAUD = 115200;
+
+  // ====== Terminal (Serial Monitor) ======
+  let termReader = null;
+  let termWriter = null;
+  let termRunning = false;
+  let commandHistory = [];
+  let historyIndex = 0;
+  let historyDraft = "";
+
+  function setActivePanel(which) {
+    const isLog = which === "log";
+    tabLog?.classList.toggle("is-active", isLog);
+    tabTerm?.classList.toggle("is-active", !isLog);
+    panelLog?.classList.toggle("is-active", isLog);
+    panelTerm?.classList.toggle("is-active", !isLog);
+  }
+
+  function termPrint(s) {
+    if (!termOut) return;
+    termOut.textContent += String(s);
+    termOut.scrollTop = termOut.scrollHeight;
+  }
+
+  function termPrintLn(s) {
+    termPrint(String(s) + "\n");
+  }
+
+  function setTerminalEnabled(enabled) {
+    if (termIn) termIn.disabled = !enabled;
+    if (btnTermSend) btnTermSend.disabled = !enabled;
+    if (btnTermClear) btnTermClear.disabled = !enabled;
+    if (termBaud) termBaud.disabled = !enabled; // opcional: trava baud depois de conectar
+  }
+
+  async function openTerminalStreams() {
+    if (!port) throw new Error("Sem porta serial.");
+    if (!port.readable || !port.writable) throw new Error("Porta não está pronta para leitura/escrita.");
+
+    // Writer
+    termWriter = port.writable.getWriter();
+
+    // Reader loop
+    const decoder = new TextDecoder();
+    termRunning = true;
+
+    termReader = port.readable.getReader();
+    while (termRunning) {
+      const { value, done } = await termReader.read();
+      if (done) break;
+      if (value) termPrint(decoder.decode(value));
+    }
+  }
+
+  async function closeTerminalStreams() {
+    termRunning = false;
+
+    try {
+      if (termReader) {
+        await termReader.cancel();
+        termReader.releaseLock();
+      }
+    } catch {}
+    termReader = null;
+
+    try {
+      if (termWriter) termWriter.releaseLock();
+    } catch {}
+    termWriter = null;
+  }
+
+  async function sendTerminalLine(line) {
+    if (!termWriter) throw new Error("Terminal não está pronto para enviar.");
+    const encoder = new TextEncoder();
+    await termWriter.write(encoder.encode(String(line) + "\n"));
+  }
+
+  btnTermClear?.addEventListener("click", () => {
+    if (termOut) termOut.textContent = "";
+  });
+
+  btnTermSend?.addEventListener("click", async () => {
+    try {
+      const v = (termIn?.value || "").trimEnd();
+      if (!v) return;
+      await sendTerminalLine(v);
+      if (!commandHistory.length || commandHistory[commandHistory.length - 1] !== v) {
+        commandHistory.push(v);
+        if (commandHistory.length > 200) commandHistory = commandHistory.slice(-200);
+      }
+      historyIndex = commandHistory.length;
+      historyDraft = "";
+      if (termIn) termIn.value = "";
+    } catch (e) {
+      console.error(e);
+      termPrintLn("\n[ERRO] " + (e?.message || e));
+    }
+  });
+
+  termIn?.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      btnTermSend?.click();
+      return;
+    }
+    if (ev.key === "ArrowUp") {
+      if (!commandHistory.length) return;
+      ev.preventDefault();
+      if (historyIndex === commandHistory.length) historyDraft = termIn.value;
+      historyIndex = Math.max(0, historyIndex - 1);
+      termIn.value = commandHistory[historyIndex] || "";
+      return;
+    }
+    if (ev.key === "ArrowDown") {
+      if (!commandHistory.length) return;
+      ev.preventDefault();
+      historyIndex = Math.min(commandHistory.length, historyIndex + 1);
+      if (historyIndex === commandHistory.length) termIn.value = historyDraft || "";
+      else termIn.value = commandHistory[historyIndex] || "";
+      return;
+    }
+    historyIndex = commandHistory.length;
+  });
+
+  // ====== ZIP ======
+  async function readZipEntries(file) {
+    const ab = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(ab);
+    const out = {};
+    const files = Object.keys(zip.files).filter((p) => !zip.files[p].dir);
+    for (const p of files) {
+      out[p] = new Uint8Array(await zip.files[p].async("arraybuffer"));
+    }
+    return out;
+  }
+
+  function pickFirmwarePlan(chipStr, entries) {
+    const lower = String(chipStr || "").toLowerCase();
+    const is32 = lower.includes("esp32");
+    const is66 = lower.includes("8266");
+    const paths = Object.keys(entries);
+    const lowerOf = (p) => String(p || "").toLowerCase();
+    const byExact = (exactPath) => {
+      const target = lowerOf(exactPath);
+      return paths.find((p) => lowerOf(p) === target) || null;
+    };
+    const pickUniquePath = (label, matcher) => {
+      const list = paths.filter((p) => matcher(lowerOf(p)));
+      if (list.length > 1) {
+        throw new Error(`ZIP ambíguo: múltiplos candidatos para ${label}: ${list.join(", ")}`);
+      }
+      return list[0] || null;
+    };
+    const choosePath = (label, exactPath, matcher) => {
+      const exact = byExact(exactPath);
+      if (exact) return exact;
+      return pickUniquePath(label, matcher);
+    };
+
+    if (is32) {
+      // Prioridade 1: merged.bin (qualquer pasta/nome, desde que termine com .merged.bin)
+      const mergedPath = pickUniquePath("ESP32 merged.bin", (lp) => lp.endsWith(".merged.bin"));
+      if (mergedPath) {
+        return [{ address: 0x0000, data: entries[mergedPath] }];
+      }
+
+      // Prioridade 2: conjunto bootloader + partitions + firmware (nomes antigos ou sufixos Arduino IDE)
+      const bootPath = choosePath(
+        "ESP32 bootloader",
+        "esp32/bootloader.bin",
+        (lp) => lp.endsWith("/bootloader.bin") || lp === "bootloader.bin" || lp.endsWith(".bootloader.bin")
+      );
+      const partPath = choosePath(
+        "ESP32 partitions",
+        "esp32/partitions.bin",
+        (lp) => lp.endsWith("/partitions.bin") || lp === "partitions.bin" || lp.endsWith(".partitions.bin")
+      );
+      const app0Path = choosePath(
+        "ESP32 boot_app0",
+        "esp32/boot_app0.bin",
+        (lp) => lp.endsWith("/boot_app0.bin") || lp === "boot_app0.bin" || lp.endsWith(".boot_app0.bin")
+      );
+      const fwPath = choosePath(
+        "ESP32 firmware",
+        "esp32/firmware.bin",
+        (lp) =>
+          lp.endsWith(".bin") &&
+          !lp.endsWith(".bootloader.bin") &&
+          !lp.endsWith(".partitions.bin") &&
+          !lp.endsWith(".merged.bin") &&
+          !lp.endsWith(".boot_app0.bin") &&
+          !lp.endsWith("/bootloader.bin") &&
+          !lp.endsWith("/partitions.bin") &&
+          !lp.endsWith("/boot_app0.bin")
+      );
+
+      const boot = bootPath ? entries[bootPath] : null;
+      const part = partPath ? entries[partPath] : null;
+      const app0 = app0Path ? entries[app0Path] : null;
+      const fw = fwPath ? entries[fwPath] : null;
+
+      if (!boot || !part || !fw) {
+        throw new Error(
+          "ZIP inválido p/ ESP32. Esperado: (1) *.merged.bin ou (2) bootloader + partitions + firmware (.bin), em qualquer pasta."
+        );
+      }
+
+      const plan = [
+        { address: 0x1000, data: boot },
+        { address: 0x8000, data: part },
+      ];
+
+      if (app0) plan.push({ address: 0xE000, data: app0 });
+      plan.push({ address: 0x10000, data: fw });
+
+      return plan;
+    }
+
+    if (is66) {
+      const fwPath = choosePath(
+        "ESP8266 firmware",
+        "esp8266/firmware.bin",
+        (lp) =>
+          (lp.endsWith("/firmware.bin") || lp === "firmware.bin" || lp.endsWith(".bin")) &&
+          !lp.endsWith(".bootloader.bin") &&
+          !lp.endsWith(".partitions.bin") &&
+          !lp.endsWith(".merged.bin") &&
+          !lp.endsWith(".boot_app0.bin")
+      );
+      const fw = fwPath ? entries[fwPath] : null;
+      if (!fw) throw new Error("ZIP inválido p/ ESP8266. Esperado: esp8266/firmware.bin");
+      return [{ address: 0x0000, data: fw }];
+    }
+
+    // fallback por estrutura: tenta ambos e decide pelo que for válido sem ambiguidade
+    let esp32Plan = null;
+    let esp8266Plan = null;
+    try { esp32Plan = pickFirmwarePlan("esp32", entries); } catch {}
+    try { esp8266Plan = pickFirmwarePlan("8266", entries); } catch {}
+    if (esp32Plan && !esp8266Plan) return esp32Plan;
+    if (esp8266Plan && !esp32Plan) return esp8266Plan;
+    if (esp32Plan && esp8266Plan) {
+      throw new Error("ZIP ambíguo: contém layout válido para ESP32 e ESP8266.");
+    }
+
+    throw new Error("Chip não suportado/indetectável: " + chipStr);
+  }
+
+  // ====== robust writeFlash (compatível com APIs antigas e novas) ======
+  function ui8ToBstrLocal(u8) {
+    const CHUNK = 0x8000;
+    let out = "";
+    for (let i = 0; i < u8.length; i += CHUNK) {
+      const s = u8.subarray(i, i + CHUNK);
+      out += String.fromCharCode(...s);
+    }
+    return out;
+  }
+
+  async function writeFlashRobust(loader, segments, progressCb) {
+    const fn = loader?.writeFlash;
+    if (typeof fn !== "function") throw new Error("writeFlash não disponível no ESPLoader.");
+
+    const norm = (segments || []).map((p) => ({
+      address: Number(p?.address ?? p?.addr ?? 0),
+      data: p?.data instanceof Uint8Array ? p.data : new Uint8Array(p?.data || []),
+    }));
+    if (!norm.length) throw new Error("Plano de gravação vazio.");
+
+    const total = norm.reduce((s, p) => s + p.data.length, 0);
+    const offsets = [];
+    let acc = 0;
+    for (const p of norm) {
+      offsets.push(acc);
+      acc += p.data.length;
+    }
+    const reportedTotals = new Array(norm.length).fill(0);
+    const reportedWritten = new Array(norm.length).fill(0);
+    const emitProgress = (written, totalRef) => {
+      progressCb?.(Math.max(0, Number(written) || 0), Math.max(1, Number(totalRef) || 1));
+    };
+
+    const sizeCandidates = ["4MB", "keep"];
+    const modeCandidates = ["keep", "dio", "qio"];
+    const freqCandidates = ["keep", "40m", "80m"];
+    const attempts = [];
+
+    // A) API nova: writeFlash({ fileArray, flashSize, ... })
+    for (const fs of sizeCandidates) {
+      attempts.push(() =>
+        fn.call(loader, {
+          fileArray: norm.map((p) => ({ address: p.address, data: ui8ToBstrLocal(p.data) })),
+          flashSize: fs,
+          flashMode: "keep",
+          flashFreq: "keep",
+          eraseAll: false,
+          compress: true,
+          reportProgress(fileIndex, written, fileTotal) {
+            const idx = Number(fileIndex) || 0;
+            const w = Number(written) || 0;
+            const t = Number(fileTotal) || 0;
+            reportedWritten[idx] = Math.max(reportedWritten[idx] || 0, w);
+            if (t > 0) reportedTotals[idx] = Math.max(reportedTotals[idx] || 0, t);
+            const sumWritten = reportedWritten.reduce((s, v) => s + (Number(v) || 0), 0);
+            const sumTotals = reportedTotals.reduce((s, v) => s + (Number(v) || 0), 0);
+            if (sumTotals > 0) emitProgress(sumWritten, sumTotals);
+            else {
+              const base = offsets[idx] || 0;
+              const partial = t > 0 ? Math.min(w, t) : w;
+              emitProgress(Math.min(total, base + partial), total);
+            }
+          },
+        })
+      );
+    }
+
+    // B) API antiga: (segments, flashSize, flashMode, flashFreq, eraseAll, compress, cb)
+    for (const fs of sizeCandidates) {
+      for (const fm of modeCandidates) {
+        for (const ff of freqCandidates) {
+          attempts.push(() => fn.call(loader, norm, fs, fm, ff, false, true, (written) => emitProgress(written, total)));
+        }
+      }
+    }
+
+    // C) API intermediária: (segments, options, cb)
+    for (const fs of sizeCandidates) {
+      attempts.push(() =>
+        fn.call(
+          loader,
+          norm,
+          { flashSize: fs, flashMode: "keep", flashFreq: "keep", eraseAll: false, compress: true },
+          (written) => emitProgress(written, total)
+        )
+      );
+    }
+
+    let lastErr = null;
+    for (const run of attempts) {
+      try {
+        const res = await run();
+        emitProgress(total, total);
+        return res;
+      } catch (e) {
+        lastErr = e;
+        continue;
+      }
+    }
+    throw lastErr || new Error("Falha ao gravar (assinatura do writeFlash incompatível).");
+  }
+
+  // ====== UI state ======
+  function resetUiDisconnected() {
+    btnConnect.disabled = false;
+
+    btnDisconnect.disabled = true;
+    btnDisconnect.classList.remove("is-danger");
+
+    zipFile.disabled = true;
+    btnPickZip.disabled = true;
+    btnFlash.disabled = true;
+
+    setProgress(0);
+    setStatusUi("Desconectado.", "idle");
+
+    setTerminalEnabled(false);
+  }
+
+  zipFile.addEventListener("change", () => {
+    btnFlash.disabled = !zipFile.files?.[0] || !esploader;
+  });
+
+  // ====== Connect / Disconnect ======
+  btnConnect.addEventListener("click", async () => {
+    try {
+      logEl.textContent = "";
+      setProgress(0);
+
+      if (!("serial" in navigator)) throw new Error("WebSerial não disponível neste navegador.");
+
+      setStatusUi("Selecione a porta serial...", "working");
+      port = await navigator.serial.requestPort();
+
+      transport = new Transport(port);
+
+      const terminal = {
+        clean() {},
+        write(data) {
+          const s = String(data);
+          if (s === ".") return; // ignora pontinhos
+          log(s);
+        },
+        writeLine(data) { log(String(data)); },
+        error(data) { log("ERR: " + String(data)); },
+      };
+
+      setStatusUi("Criando ESPLoader...", "working");
+      esploader = new ESPLoader({ transport, baudrate: BAUD, terminal });
+
+      setStatusUi("Conectando ao chip...", "working");
+      await esploader.connect();
+
+      setStatusUi("Uploading stub...", "working");
+      try { await esploader.runStub(); } catch {}
+
+      chipName =
+        (esploader?.chip?.CHIP_NAME ? String(esploader.chip.CHIP_NAME) : null) ||
+        (esploader?.chip?.name ? String(esploader.chip.name) : null) ||
+        "desconhecido";
+
+      log("Conectado ✅");
+      log("Chip: " + chipName);
+      await logChipDetails(esploader, port);
+
+      setStatusUi("Conectado: " + chipName, "ok");
+
+      btnConnect.disabled = true;
+      btnDisconnect.disabled = false;
+      btnDisconnect.classList.add("is-danger");
+
+      zipFile.disabled = false;
+      btnPickZip.disabled = false;
+      btnFlash.disabled = !zipFile.files?.[0];
+
+      // Terminal enabled + abrir streams (sem conflitar)
+      setTerminalEnabled(true);
+      termPrintLn(`[Terminal] Conectado. Baud do terminal: ${termBaud?.value || 115200}\n`);
+
+      // garante que está aberta (geralmente já está por causa do loader)
+      if (!port.readable) {
+        const br = Number(termBaud?.value || 115200);
+        await port.open({ baudRate: br });
+      }
+
+      // abre streams se não estão abertas
+      if (!termReader && !termWriter) {
+        openTerminalStreams().catch((e) => {
+          console.error(e);
+          termPrintLn("\n[ERRO Terminal] " + (e?.message || e));
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      setStatusUi("Falha ao conectar.", "err");
+      log("Erro: " + (e?.message || e));
+
+      try { await closeTerminalStreams(); } catch {}
+
+      try { if (transport) await transport.disconnect(); } catch {}
+      port = null; transport = null; esploader = null; chipName = null;
+      resetUiDisconnected();
+    }
+  });
+
+  btnDisconnect.addEventListener("click", async () => {
+    try {
+      setStatusUi("Desconectando...", "working");
+      await closeTerminalStreams();
+      if (transport) await transport.disconnect();
+    } catch {}
+    port = null; transport = null; esploader = null; chipName = null;
+    resetUiDisconnected();
+  });
+
+  // ====== Flash ======
+  btnFlash.addEventListener("click", async () => {
+    const file = zipFile.files?.[0];
+    if (!file || !esploader) return;
+
+    try {
+      btnFlash.disabled = true;
+      setProgress(0);
+
+      // para evitar conflito: pausa terminal durante flash
+      try { await closeTerminalStreams(); } catch {}
+
+      setStatusUi("Lendo ZIP...", "working");
+      log("Abrindo pacote: " + file.name);
+
+      const entries = await readZipEntries(file);
+
+      log("Arquivos no ZIP:");
+      Object.keys(entries).forEach((k) => log(" - " + k));
+
+      const plan = pickFirmwarePlan(chipName, entries);
+
+      log("Plano:");
+      plan.forEach((p) => log(` - 0x${p.address.toString(16)} (${p.data.length} bytes)`));
+
+      if (chkErase?.checked) {
+        setStatusUi("Apagando flash...", "working");
+        await esploader.eraseFlash();
+      } else {
+        log("Erase desativado (toggle).");
+      }
+
+      setStatusUi("Gravando...", "working");
+      await writeFlashRobust(esploader, plan, (written, total) => {
+        if (typeof written === "number" && typeof total === "number" && total > 0) {
+          setProgress(Math.round((written / total) * 100));
+        }
+      });
+
+      setProgress(100);
+      setStatusUi("Concluído. Reiniciando...", "working");
+      await esploader.hardReset();
+
+      setStatusUi("Pronto! Firmware gravado.", "ok");
+
+    } catch (e) {
+      console.error(e);
+      setStatusUi("Falha ao gravar.", "err");
+      log("Erro: " + (e?.message || e));
+    } finally {
+      btnFlash.disabled = false;
+
+      // volta terminal
+      try {
+        if (port?.readable && port?.writable && !termReader && !termWriter) {
+          openTerminalStreams().catch(() => {});
+        }
+      } catch {}
+    }
+  });
+
+  // ====== Ajuda drivers ======
+  // >>> preencha os links oficiais quando for publicar <<<
+  const LINKS = {
+    ch340: {
+      win: "https://sparks.gogo.co.nz/assets/_site_/downloads/CH34x_Install_Windows_v3_4.zip",
+      mac: "https://sparks.gogo.co.nz/assets/_site_/downloads/CH341SER_MAC_V1_8.zip",
+      lin: "https://sparks.gogo.co.nz/assets/_site_/downloads/CH340_LINUX.zip",
+    },
+    cp210x: {
+      win: "https://www.silabs.com/documents/public/software/CP210x_Universal_Windows_Driver.zip",
+      mac: "https://www.silabs.com/documents/public/software/Mac_OSX_VCP_Driver.zip",
+      lin: "https://www.silabs.com/documents/login/software/Linux_3.x.x_4.x.x_VCP_Driver_Source.zip",
+    },
+  };
+
+  function osGuess() {
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes("windows")) return "win";
+    if (ua.includes("mac os") || ua.includes("macintosh")) return "mac";
+    return "lin";
+  }
+
+  function makeLinks(osKey) {
+    const osName = osKey === "win" ? "Windows" : osKey === "mac" ? "macOS" : "Linux";
+    return [
+      `<div><b>Não sabe qual driver?</b> Instale CH340. Se não funcionar, tente CP210x.</div>`,
+      `<div style="margin-top:8px"><b>${osName}:</b></div>`,
+      `• <a href="${LINKS.ch340[osKey]}" target="_blank" rel="noopener">Driver CH340/CH341 (${osName})</a><br/>`,
+      `• <a href="${LINKS.cp210x[osKey]}" target="_blank" rel="noopener">Driver CP210x (${osName})</a><br/>`,
+      `<div style="margin-top:10px"><b>Depois de instalar:</b> desconecte e conecte o ESP, recarregue a página e clique em <b>Conectar</b>.</div>`,
+    ].join("\n");
+  }
+
+  function renderHelp(osKey) {
+    if (driverLinks) driverLinks.innerHTML = makeLinks(osKey);
+    if (driverHint) {
+      if (osKey === "win") {
+        driverHint.textContent = "No Windows, o driver geralmente é necessário. Se não aparecer porta, pode ser driver faltando ou cabo sem dados.";
+      } else if (osKey === "lin") {
+        driverHint.textContent = "No Linux, muitas vezes não precisa instalar driver. Se não aparecer porta, pode ser permissão (grupo dialout).";
+      } else if (osKey === "mac") {
+        driverHint.textContent = " No macOS, o driver pode ser bloqueado por segurança (System Preferences > Security & Privacy).";
+      }
+    }
+  }
+
+  btnHelpWin?.addEventListener("click", () => renderHelp("win"));
+  btnHelpMac?.addEventListener("click", () => renderHelp("mac"));
+  btnHelpLin?.addEventListener("click", () => renderHelp("lin"));
+  tabLog?.addEventListener("click", () => setActivePanel("log"));
+  tabTerm?.addEventListener("click", () => setActivePanel("term"));
+  renderHelp(osGuess());
+
+  // init
+  resetUiDisconnected();
+  setStatusUi("Aguardando conexão...", "idle");
+  setActivePanel("log");
+</script>
+
+
+</body>
+
+</html>
+
+
